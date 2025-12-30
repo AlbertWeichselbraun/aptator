@@ -1,0 +1,53 @@
+[project]
+name = "aptator"
+version = "0.1.0"
+description = "Install and update .deb and binary releases from GitHub"
+authors = [
+    {name="Albert Weichselbraun", email="albert@weichselbraun.net"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.scripts]
+aptator = "aptator:main"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"  # adjust as needed
+extend-exclude = ["*.html", "*.json", "*.txt", "/a", "/b", "docs/conf.py"]
+src = ["src", "tests", "benchmarking", "examples"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint]
+select = [
+    "A",      # flake8-builtins
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "E",      # pycodestyle
+    "EM",     # flake8-errmsg
+    "F",      # Pyflakes
+    "FA",     # flake8-future-annotations - use modern annotations
+    "ICN",    # flake8-import-conventions - standard import aliases
+    "PIE",    # flake8-pie
+    "PLE",    # pylint equivalents
+    "PLW",    # pylint equivalents
+    "PTH",    # flake8-use-pathlib - prefer pathlib over os.path
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "N",      # flake8-naming
+    "SIM",    # flake8-simplify
+    "I",      # isort
+    "RET",    # flake8-return
+    "RSE", "SLOT", "TID", "TC", "C90", "PERF", "E", "W", 
+    "FURB", "RUF", "TRY", "YTT",
+    "TCH",    # flake8-type-checking - optimize type checking imports
+    "S",      # flake8-bandit (security) — replaces dlint/bandit
+    "UP",     # pyupgrade
+]
+ignore = [
+    "S310",   # Audit URL open for permitted schemes
+    "S603",   # subprocess without shell=True
+]
+
