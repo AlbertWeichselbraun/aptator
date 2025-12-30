@@ -1,0 +1,18 @@
+# aptator configuration file
+# Location: ~/.config/aptator/aptator.toml
+
+[[packages]]
+name = "FreeTube"
+repo = "FreeTubeApp/FreeTube"
+asset_pattern = ".*_amd64\\.deb$"
+asset_version_pattern = "v(.*)-beta"
+package_name = "freetube"
+prerelease = true      # Set to true to consider pre-releases
+
+# Additional examples:
+# [[packages]]
+# name = "Example App"
+# repo = "owner/repo"
+# asset_pattern = ".*\.deb$"
+# package_name = "example-app"
+# prerelease = false
