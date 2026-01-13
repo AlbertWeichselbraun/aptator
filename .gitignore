@@ -1,4 +1,4 @@
 aptator.egg-info/
 __pycache__/
 uv.lock
-
+build/

@@ -6,7 +6,9 @@ import tomllib
 from os import getenv
 from pathlib import Path
 
-CONFIG_PATH = Path(getenv("XDG_CONFIG_HOME", Path.home() / ".config")) / "aptator" / "aptator.toml"
+from aptator import CONFIG_PATH
+from aptator.state import get_installed_version, set_installed_version
+
 
 
 def process_package(cfg):
@@ -22,10 +24,12 @@ def process_package(cfg):
 
 
 def main():
+    """Main entry point for the aptator CLI."""
     with CONFIG_PATH.open("rb") as f:
         config = tomllib.load(f)
 
     for pkg in config.get("packages", []):
+        print("X")
         try:
             process_package(pkg)
         except Exception as e:
