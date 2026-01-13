@@ -5,7 +5,7 @@ from pathlib import Path
 
 def run(cmd):
     """Run a command and return its output as a string."""
-    return subprocess.check_output(cmd, stderr=subprocess.DEVNULL, check=True, text=True).strip()
+    return subprocess.check_output(cmd, stderr=subprocess.DEVNULL, text=True).strip()
 
 
 def verify_checksum(file_path: Path, expected_hash: str, hash_type: str = "sha256") -> bool:

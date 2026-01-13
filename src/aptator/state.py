@@ -20,7 +20,7 @@ def get_installed_version(package_name: str) -> str | None:
         "SELECT installed_version FROM packages WHERE name = ?",
         (package_name,)
     ).fetchone()
-    return next(row, None)
+    return row[0] if row else None
 
 def set_installed_version(package_name: str, version: str) -> None:
     """Set the installed version of the given package."""

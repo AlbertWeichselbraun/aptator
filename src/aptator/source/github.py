@@ -4,13 +4,15 @@ import sys
 import urllib.request
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Callable
 
+from aptator.source import Source
 from aptator.tools import verify_checksum
 
 GITHUB_API = "https://api.github.com/repos/{repo}/releases"
 
 
-class GitHub:
+class GitHub(Source):
     def __init__(self, repo: str, asset_version_re: str, asset_re: str):
         self.repo = repo
         self.asset_version_re = re.compile(asset_version_re)
@@ -49,10 +51,10 @@ class GitHub:
             return None
         return version_match.group(1)
 
-    def download_and_verify_asset(self, asset: dict) -> Path:
+    def perform_asset_action(self, asset: dict, action: Callable) -> bool:
         with TemporaryDirectory() as tmp, urllib.request.urlopen(asset["browser_download_url"]) as response:
-            deb_path = Path(tmp) / asset["name"]
-            deb_path.write_bytes(response.read())
+            asset_path = Path(tmp) / asset["name"]
+            asset_path.write_bytes(response.read())
 
             # Verify checksum if available in asset digest
             digest = asset.get("digest")
@@ -60,11 +62,14 @@ class GitHub:
                 hash_type, expected_hash = self.parse_digest(digest)
                 if hash_type and expected_hash:
                     print(f"  verifying {hash_type} checksum...")
-                    if verify_checksum(deb_path, expected_hash, hash_type):
+                    if verify_checksum(asset_path, expected_hash, hash_type):
                         print("  checksum verified.")
-                        return deb_path
+                        action(asset_path)
+                        return True
                     print("  checksum verification failed! Download may be corrupted.", file=sys.stderr)
-                    sys.exit(1)
+                    print("  aborting installation.", file=sys.stderr)
+                    return False
             else:
                 print("  no digest available, skipping verification")
-            return deb_path
+            action(asset_path)
+            return True
