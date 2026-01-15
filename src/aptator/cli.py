@@ -8,8 +8,10 @@ from pathlib import Path
 
 from aptator import CONFIG_PATH
 from aptator.state import get_installed_version, set_installed_version
-from aptator.source.github import GitHub
+from aptator.source.github import GitHub, Asset, Tag
 from aptator.actions.deb import install_deb
+from aptator.actions.exec import exec_command
+from aptator.actions.extract_and_link import extract_and_link
 
 
 def process_package(cfg):
@@ -19,6 +21,7 @@ def process_package(cfg):
     asset_re = re.compile(cfg["asset_pattern"])
     asset_version_re = re.compile(cfg.get("asset_version_pattern", "(.*)"))
     allow_prerelease = cfg.get("prerelease", False)
+    use_tag = cfg.get("use_tag", False)
     action = cfg.get("action", {})
     action_type = action.get("type") if isinstance(action, dict) else None
 
@@ -28,23 +31,58 @@ def process_package(cfg):
     installed_version = get_installed_version(name)
     print("... Installed version:", installed_version)
 
-    # Get latest release from GitHub
+    # Get latest release or tag from GitHub
     gh = GitHub(repo, asset_version_re, asset_re)
-    release_asset = gh.get_latest_release_asset(allow_prerelease=allow_prerelease)
-    release_version = gh.get_asset_version(release_asset) if release_asset else None
+    
+    if use_tag:
+        downloadable = gh.get_latest_tag()
+        if not downloadable:
+            print("No tag found...")
+            return
+        release_version = asset_version_re.search(downloadable.data["name"]).group(1) if asset_version_re.search(downloadable.data["name"]) else downloadable.data["name"]
+    else:
+        downloadable = gh.get_latest_release_asset(allow_prerelease=allow_prerelease)
+        if not downloadable:
+            print("No release asset found...")
+            return
+        release_version = gh.get_asset_version(downloadable.data)
+    
     print("... Latest release:", release_version if release_version else "none")
     print()
 
-    if installed_version != release_version and release_asset:
+    if installed_version != release_version:
         print(f"...Updating {name} to version {release_version}")
         
         # Handle deb-install action
         if action_type == "deb-install":
-            if gh.perform_asset_action(release_asset, action=install_deb):
+            if gh.perform_action(downloadable, action=install_deb):
                 set_installed_version(name, release_version)
                 print(f"{name} updated successfully.")
             else:
-                print(f"{name} update failed.")            
+                print(f"{name} update failed.")
+        
+        # Handle exec action
+        elif action_type == "exec":
+            command = action.get("command")
+            if command:
+                exec_command(command)
+                set_installed_version(name, release_version)
+                print(f"{name} updated successfully.")
+            else:
+                print(f"{name} update failed: no command specified.")
+        
+        # Handle extract-and-link action
+        elif action_type == "extract-and-link":
+            extract_to = action.get("extract_to")
+            link_to = action.get("link_to")
+            if extract_to and link_to:
+                if gh.perform_action(downloadable, action=lambda path: extract_and_link(str(path), extract_to, link_to)):
+                    set_installed_version(name, release_version)
+                    print(f"{name} updated successfully.")
+                else:
+                    print(f"{name} update failed.")
+            else:
+                print(f"{name} update failed: extract_to and link_to must be specified.")            
 
     
 
@@ -56,7 +94,7 @@ def main():
     for pkg in config.get("packages", []):
         try:
             process_package(pkg)
-        except IOException as e:
+        except Exception as e:
             print(f"Error processing {pkg.get('name')}: {e}", file=sys.stderr)
 
 
