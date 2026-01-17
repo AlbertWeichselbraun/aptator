@@ -4,12 +4,12 @@ from pathlib import Path
 
 
 def extract_and_link(tar_gz_path, extract_to, link_to):
-    """Extract a tar.gz file and create a symlink to the extracted directory.
+    """Extract a tar.gz file, rename it to extract_to, and create a symlink to it.
     
     Args:
         tar_gz_path: Path to the tar.gz file
-        extract_to: Directory where to extract the archive
-        link_to: Path where to create the symlink
+        extract_to: Final path for the extracted directory (e.g., /opt/Zotero-1.1.1)
+        link_to: Path where to create the symlink (e.g., /opt/zotero)
         
     Raises:
         FileNotFoundError: If the tar.gz file doesn't exist
@@ -29,15 +29,32 @@ def extract_and_link(tar_gz_path, extract_to, link_to):
             raise ValueError("Archive is empty")
         top_level = members[0].name.split('/')[0]
     
-    extracted_dir = extract_to / top_level
+    # Extract to parent directory
+    extract_parent = extract_to.parent
+    extracted_dir = extract_parent / top_level
     
     # Extract the tar.gz file using sudo
-    print(f"  extracting to {extract_to}...")
+    print(f"  extracting to {extract_parent}...")
     subprocess.run(
-        ["sudo", "tar", "-xzf", str(tar_gz_path), "-C", str(extract_to)],
+        ["sudo", "tar", "-xzf", str(tar_gz_path), "-C", str(extract_parent)],
         check=True,
         capture_output=True
     )
+    
+    # Rename the extracted directory to the desired name
+    if extracted_dir != extract_to:
+        print(f"  renaming {extracted_dir} to {extract_to}...")
+        # Remove extract_to if it already exists
+        subprocess.run(
+            ["sudo", "rm", "-rf", str(extract_to)],
+            check=True,
+            capture_output=True
+        )
+        subprocess.run(
+            ["sudo", "mv", str(extracted_dir), str(extract_to)],
+            check=True,
+            capture_output=True
+        )
     
     # Remove existing symlink if it exists (using sudo)
     print(f"  removing existing link/directory at {link_to}...")
@@ -48,9 +65,9 @@ def extract_and_link(tar_gz_path, extract_to, link_to):
     )
     
     # Create symlink using sudo
-    print(f"  creating symlink {link_to} -> {extracted_dir}...")
+    print(f"  creating symlink {link_to} -> {extract_to}...")
     subprocess.run(
-        ["sudo", "ln", "-sf", str(extracted_dir), str(link_to)],
+        ["sudo", "ln", "-sf", str(extract_to), str(link_to)],
         check=True,
         capture_output=True
     )

@@ -80,7 +80,7 @@ def process_package(cfg, force_packages):
     
     # Handle extract-and-link action
     elif action_type == "extract-and-link":
-        extract_to = action.get("extract_to")
+        extract_to = action.get("extract_to") + f"/{name}-{release_version}"
         link_to = action.get("link_to")
         if extract_to and link_to:
             if gh.perform_action(downloadable, action=lambda path: extract_and_link(str(path), extract_to, link_to)):
