@@ -14,13 +14,12 @@ conn.execute("""
     )
 """)
 
+
 def get_installed_version(package_name: str) -> str | None:
     """Get the installed version of a package, or None if not installed."""
-    row = conn.execute(
-        "SELECT installed_version FROM packages WHERE name = ?",
-        (package_name,)
-    ).fetchone()
+    row = conn.execute("SELECT installed_version FROM packages WHERE name = ?", (package_name,)).fetchone()
     return row[0] if row else None
+
 
 def set_installed_version(package_name: str, version: str) -> None:
     """Set the installed version of the given package."""

@@ -1,5 +1,3 @@
-from subprocess import CalledProcessError
-
 from aptator.tools import run
 
 

@@ -3,9 +3,9 @@ import re
 import sys
 import urllib.request
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable
 
 from aptator.source import Source
 from aptator.tools import verify_checksum
@@ -15,55 +15,52 @@ GITHUB_API = "https://api.github.com/repos/{repo}/releases"
 
 class Downloadable(ABC):
     """Abstract base class for downloadable GitHub objects (assets or tags)."""
-    
+
     @abstractmethod
     def get_download_url(self) -> str:
         """Return the URL to download the object."""
-        pass
-    
+
     @abstractmethod
     def get_filename(self) -> str:
         """Return the filename to save as."""
-        pass
-    
+
     @abstractmethod
     def get_digest(self) -> str | None:
         """Return the digest string (algorithm:hash), or None if not available."""
-        pass
 
 
 class Asset(Downloadable):
     """Represents a GitHub release asset."""
-    
+
     def __init__(self, asset_data: dict):
         self.data = asset_data
-    
+
     def get_download_url(self) -> str:
         return self.data["browser_download_url"]
-    
+
     def get_filename(self) -> str:
         return re.sub(
-        r"https://api\.github\.com/repos/([^/]+)/([^/]+)/tarball/refs/tags/([^/]+)",
-        r"https://github.com/\1/\2/archive/refs/tags/\3.tar.gz",
-        self.data["name"])
-        
-    
+            r"https://api\.github\.com/repos/([^/]+)/([^/]+)/tarball/refs/tags/([^/]+)",
+            r"https://github.com/\1/\2/archive/refs/tags/\3.tar.gz",
+            self.data["name"],
+        )
+
     def get_digest(self) -> str | None:
         return self.data.get("digest")
 
 
 class Tag(Downloadable):
     """Represents a GitHub tag."""
-    
+
     def __init__(self, tag_data: dict):
         self.data = tag_data
-    
+
     def get_download_url(self) -> str:
         return self.data["tarball_url"]
-    
+
     def get_filename(self) -> str:
         return f"{self.data['name']}.tar.gz"
-    
+
     def get_digest(self) -> str | None:
         # Tags don't have digest information
         return None
@@ -84,7 +81,7 @@ class GitHub(Source):
 
     def get_latest_tag(self) -> Tag | None:
         """Get the latest tag from the repository.
-        
+
         Returns:
             dict: JSON object representing the latest tag, or None if no tags found.
         """
@@ -92,11 +89,11 @@ class GitHub(Source):
         try:
             with urllib.request.urlopen(tags_url, timeout=15) as response:
                 tags = json.loads(response.read().decode("utf-8"))
-            
+
             if not tags:
                 print("  no tags found")
                 return None
-            
+
             return Tag(tags[0])
         except urllib.error.HTTPError as e:
             print(f"  error fetching tags: {e}")
@@ -127,14 +124,14 @@ class GitHub(Source):
             print(f"  unable to extract version from {asset['name']}")
             return None
         return version_match.group(1)
-    
+
     def perform_action(self, downloadable: Downloadable, action: Callable) -> bool:
         """Download and verify a Downloadable object, then perform an action on it.
-        
+
         Args:
             downloadable: A Downloadable object (Asset or Tag)
             action: Callable that takes the file path as argument
-            
+
         Returns:
             bool: True if successful, False otherwise
         """

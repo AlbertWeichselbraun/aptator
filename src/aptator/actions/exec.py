@@ -3,7 +3,7 @@ import subprocess
 
 def exec_command(command):
     """Execute a shell command.
-    
+
     Raises:
         subprocess.CalledProcessError: If the command exits with a non-zero status code.
     """

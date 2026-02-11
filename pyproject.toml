@@ -11,6 +11,13 @@ requires-python = ">=3.11"
 [project.scripts]
 aptator = "aptator.cli:main"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+sources = ["src"]
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"  # adjust as needed

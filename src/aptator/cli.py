@@ -3,16 +3,56 @@
 import argparse
 import re
 import sys
+import shutil
+import tarfile
+import tempfile
 import tomllib
-from os import getenv
+import zipfile
+
 from pathlib import Path
 
+from urllib import urlopen
+
 from aptator import CONFIG_PATH
-from aptator.state import get_installed_version, set_installed_version
-from aptator.source.github import GitHub, Asset, Tag
 from aptator.actions.deb import install_deb
 from aptator.actions.exec import exec_command
 from aptator.actions.extract_and_link import extract_and_link
+from aptator.source.github import GitHub
+from aptator.state import get_installed_version, set_installed_version
+
+TAR_TYPES = ("application/gzip", "application/x-gzip", "application/x-tar", "application/x-gtar", 
+             "application/x-bzip2", "application/x-xz", "application/x-compress", "application/x-lzma")
+ZIP_TYPES = ("application/zip", "application/x-zip-compressed", "application/x-zip", "application/x-compressed")
+
+def download_file(url: str) -> tuple[Path, str]:
+    """Download a file to a temporary location and return its path."""
+    tmp_dir = tempfile.mkdtemp()
+    dest_file = tmp_dir / "archive"
+
+    with urlopen(url) as src, dest_file.open("wb"), dest_file.open("wb") as dest:
+        content_type = src.headers.get("Content-Type", "").split(";")[0].strip()
+        shutil.copyfileobj(src, dest)
+
+    return dest_file, content_type
+
+
+def extract_archive(archive_path: Path, archive_content_type, target_dir: Path):
+    """Extract archive into target_dir."""
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    if archive_content_type in TAR_TYPES:
+        with tarfile.open(archive_path) as tar:
+            tar.extractall(target_dir)
+
+    elif archive_content_type == "zip":
+        with zipfile.ZipFile(archive_path) as zipf:
+            zipf.extractall(target_dir)
+
+    else:
+        raise ValueError(f"Unsupported archive content type: {archive_content_type}")
 
 
 def process_package(cfg, force_packages):
@@ -34,32 +74,36 @@ def process_package(cfg, force_packages):
 
     # Get latest release or tag from GitHub
     gh = GitHub(repo, asset_version_re, asset_re)
-    
+
     if use_tag:
         downloadable = gh.get_latest_tag()
         if not downloadable:
             print("No tag found...")
             return
-        release_version = asset_version_re.search(downloadable.data["name"]).group(1) if asset_version_re.search(downloadable.data["name"]) else downloadable.data["name"]
+        release_version = (
+            asset_version_re.search(downloadable.data["name"]).group(1)
+            if asset_version_re.search(downloadable.data["name"])
+            else downloadable.data["name"]
+        )
     else:
         downloadable = gh.get_latest_release_asset(allow_prerelease=allow_prerelease)
         if not downloadable:
             print("No release asset found...")
             return
         release_version = gh.get_asset_version(downloadable.data)
-    
+
     print("... Latest release:", release_version if release_version else "none")
     print()
 
     # skip packages that have already the latest version installed
     if installed_version == release_version and name not in force_packages:
         return
-    
+
     if name in force_packages:
         print(f"...Forcing reinstallation of {name} with version {release_version}")
     else:
         print(f"...Updating {name} to version {release_version}")
-    
+
     # Handle deb-install action
     if action_type == "deb-install":
         if gh.perform_action(downloadable, action=install_deb):
@@ -67,7 +111,7 @@ def process_package(cfg, force_packages):
             print(f"{name} updated successfully.")
         else:
             print(f"{name} update failed.")
-    
+
     # Handle exec action
     elif action_type == "exec":
         command = action.get("command")
@@ -77,7 +121,7 @@ def process_package(cfg, force_packages):
             print(f"{name} updated successfully.")
         else:
             print(f"{name} update failed: no command specified.")
-    
+
     # Handle extract-and-link action
     elif action_type == "extract-and-link":
         extract_to = action.get("extract_to") + f"/{name}-{release_version}"
@@ -89,25 +133,24 @@ def process_package(cfg, force_packages):
             else:
                 print(f"{name} update failed.")
         else:
-            print(f"{name} update failed: extract_to and link_to must be specified.")            
+            print(f"{name} update failed: extract_to and link_to must be specified.")
 
-    
 
 def main():
     """Main entry point for the aptator CLI."""
     parser = argparse.ArgumentParser(
         description="Manage GitHub release-based package installations",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--force",
         nargs="+",
         metavar="PACKAGE",
         default=[],
-        help="Force update/install for specified package names (e.g., --force FreeTube Zotero)"
+        help="Force update/install for specified package names (e.g., --force FreeTube Zotero)",
     )
     args = parser.parse_args()
-    
+
     with CONFIG_PATH.open("rb") as f:
         config = tomllib.load(f)
 
