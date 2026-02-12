@@ -60,7 +60,13 @@ select = [
     "UP",     # pyupgrade
 ]
 ignore = [
+    "S202",   # Uses of `tarfile.extractall()`
+    "S602",   # `subprocess` call with `shell=True` identified, security issue
+              # Required for complex action type "exec" commands such as the one used by calibre
     "S310",   # Audit URL open for permitted schemes
     "S603",   # subprocess without shell=True
+    "EM101",  # Exception must not use a string literal
+    "EM102",  # Exception must not use an f-string literal
+    "TRY003", # Avoid specifying long messages outside the exception class
 ]
 

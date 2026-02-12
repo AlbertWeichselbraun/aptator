@@ -28,7 +28,7 @@ class AptatorConfigMeta(type):
     def __getattr__(cls, name):
         """Dynamically access config sections and parameters."""
         if cls._sections is None:
-            with open(CONFIG_PATH, "rb") as f:
+            with CONFIG_PATH.open("rb") as f:
                 config_dict = tomllib.load(f)
                 cls._sections = {
                     section_name: ConfigSection(section_data) for section_name, section_data in config_dict.items()
