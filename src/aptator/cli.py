@@ -11,7 +11,7 @@ import zipfile
 
 from pathlib import Path
 
-from urllib import urlopen
+from urllib.request import urlopen
 
 from aptator import CONFIG_PATH
 from aptator.actions.deb import install_deb
