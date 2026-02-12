@@ -8,6 +8,13 @@ mkdir = "/usr/bin/mkdir"
 ln= "/usr/bin/ln"
 chown = "/usr/bin/chown"
 
+[[packages]]
+name = "FreeTube"
+repo = "FreeTubeApp/FreeTube"
+asset_pattern = ".*_amd64\\.deb$"
+asset_version_pattern = "_(.*)_beta"
+prerelease = true      # Set to true to consider pre-releases
+action = { type = "deb-install" }
 
 [[packages]]
 name = "Zotero"
@@ -25,18 +32,3 @@ asset_version_pattern = "calibre-(.*)-x86"
 prerelease = false
 action = { type = "exec", command="sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin" }
 
-[[packages]]
-name = "FreeTube"
-repo = "FreeTubeApp/FreeTube"
-asset_pattern = ".*_amd64\\.deb$"
-asset_version_pattern = "v(.*)-beta"
-package_name = "freetube"
-prerelease = true      # Set to true to consider pre-releases
-
-# Additional examples:
-# [[packages]]
-# name = "Example App"
-# repo = "owner/repo"
-# asset_pattern = ".*\.deb$"
-# package_name = "example-app"
-# prerelease = false

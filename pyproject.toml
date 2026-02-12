@@ -2,6 +2,7 @@
 name = "aptator"
 version = "0.1.0"
 description = "Install and update .deb and binary releases from GitHub"
+license = { text = "Apache-2.0" }
 authors = [
     {name="Albert Weichselbraun", email="albert@weichselbraun.net"}
 ]

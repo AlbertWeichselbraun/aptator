@@ -13,15 +13,9 @@ A lightweight Python utility to automatically check and install the latest relea
 
 ## Installation
 
-1. Clone or download the repository
-2. Make the script executable:
-   ```bash
-   chmod +x aptator.py
-   ```
-3. Optionally install as a system tool (requires root):
-   ```bash
-   sudo cp aptator.py /usr/local/bin/aptator
-   ```
+```bash
+pipx install aptator
+```
 
 ## Configuration
 
@@ -35,6 +29,7 @@ name = "Display Name"
 repo = "owner/repository"
 asset_pattern = ".*_amd64\\.deb$"
 package_name = "debian-package-name"
+action = { type = "deb-install" }
 ```
 
 ### Configuration Fields
@@ -43,8 +38,37 @@ package_name = "debian-package-name"
 - **repo**: GitHub repository in the format `owner/repository`
 - **asset_pattern**: Regular expression pattern to match the desired `.deb` asset filename
 - **asset_version_pattern**: Regular expression pattern to extract the version from the asset filename. Should contain one capture group `()` for the version string. Defaults to `(.*)` (entire filename as version). Optional.
-- **package_name**: Debian package name (as it appears in `dpkg`)
 - **prerelease**: Boolean to allow pre-release versions. Defaults to `false`. Optional.
+- **action**: The `action` option specifies what should be done with the downloaded asset. It determines how the asset is processed, installed, or linked. Below are the supported `action` types and their descriptions:
+  - Depending on the `type`, additional fields may be required (e.g., `command` for `exec`, `url` for `download-extract-and-link`).
+  - This modular approach allows `aptator` to support a wide range of installation and setup workflows.
+
+#### Supported Action Types
+
+1. **`deb-install`**
+   - Installs the downloaded `.deb` package using `dpkg`.
+   - Example:
+     ```toml
+     action = { type = "deb-install" }
+     ```
+
+2. **`exec`**
+   - Executes a custom shell command.
+   - Example:
+     ```toml
+     action = { type = "exec", command = "sudo apt update && sudo apt install -y example" }
+     ```
+
+3. **`download-extract-and-link`**
+   - Downloads an asset, extracts it to a specified directory, and creates a symbolic link.
+   - Fields:
+     - `url`: The URL to download the asset from.
+     - `extract_to`: The directory where the asset will be extracted.
+     - `link_to`: The target location for the symbolic link.
+   - Example:
+     ```toml
+     action = { type = "download-extract-and-link", url = "https://example.com/app.tar.gz", extract_to = "/opt", link_to = "/usr/local/bin/app" }
+     ```
 
 ### Asset Version Pattern Examples
 
@@ -73,8 +97,8 @@ name = "FreeTube"
 repo = "FreeTubeApp/FreeTube"
 asset_pattern = ".*_amd64\\.deb$"
 asset_version_pattern = "FreeTube-([0-9.]+)"
-package_name = "freetube"
 prerelease = false
+action = { type = "deb-install" }
 
 # Add more packages as needed
 [[packages]]
@@ -82,42 +106,26 @@ name = "Example App"
 repo = "owner/repo"
 asset_pattern = ".*\\.deb$"
 asset_version_pattern = "([0-9.]+)"  # Extract semver
-package_name = "example-app"
 prerelease = false
+action = { type = "deb-install" }
 ```
 
-## Usage
+### Example: Zotero Configuration
 
-Run the script directly:
+The following example demonstrates how to configure Zotero using the `download-extract-and-link` action:
 
-```bash
-python3 aptator.py
+```toml
+[[packages]]
+name = "Zotero"
+repo = "zotero/zotero"
+asset_pattern = "\\.tar.gz$"
+asset_version_pattern = "(.*).tar.gz"
+use_tag = true
+action = { type = "download-extract-and-link", url = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-x86_64", extract_to = "/opt", link_to = "/opt/zotero" }
 ```
 
-Or if installed as a system tool:
+This configuration will:
+1. Download the Zotero tarball from the specified URL.
+2. Extract it to `/opt`.
+3. Create a symbolic link to `/opt/zotero` for easier access.
 
-```bash
-aptator
-```
-
-The script will:
-1. Read the configuration from `~/.config/aptator/aptator.toml`
-2. Check each configured package for updates
-3. Download and install new versions as needed
-4. Report the status of each package
-
-### Sample Output
-
-```
-Checking FreeTube (FreeTubeApp/FreeTube)
-  updating from 0.19.1 to 0.20.0
-  installing 0.20.0
-Checking Example App (owner/repo)
-  up to date (1.2.3)
-```
-
-## Requirements
-
-- Python 3.11 or later
-- Debian-based Linux distribution with `dpkg` and `sudo`
-- Network access to GitHub API
