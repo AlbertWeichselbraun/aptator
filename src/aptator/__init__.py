@@ -39,4 +39,3 @@ class AptatorConfigMeta(type):
 
 class AptatorConfig(metaclass=AptatorConfigMeta):
     """Global configuration manager for aptator."""
-

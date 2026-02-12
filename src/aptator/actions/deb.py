@@ -1,4 +1,3 @@
-
 from aptator import AptatorConfig
 from aptator.tools import run
 

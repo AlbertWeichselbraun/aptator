@@ -9,6 +9,11 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 
+[project.urls]
+Homepage = "https://github.com/AlbertWeichselbraun/aptator"
+Repository = "https://github.com/AlbertWeichselbraun/aptator"
+Issues = "https://github.com/AlbertWeichselbraun/aptator/issues"
+
 [project.scripts]
 aptator = "aptator.cli:main"
 
@@ -22,8 +27,8 @@ sources = ["src"]
 [tool.ruff]
 line-length = 120
 target-version = "py311"  # adjust as needed
-extend-exclude = ["*.html", "*.json", "*.txt", "/a", "/b", "docs/conf.py"]
-src = ["src", "tests", "benchmarking", "examples"]
+extend-exclude = ["*.html", "*.json", "*.txt"]
+src = ["src", "tests"]
 
 [tool.ruff.format]
 quote-style = "double"
