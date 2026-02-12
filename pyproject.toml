@@ -1,6 +1,6 @@
 [project]
 name = "aptator"
-version = "0.1.0"
+version = "0.1.1"
 description = "Install and update .deb and binary releases from GitHub"
 license = { text = "Apache-2.0" }
 authors = [

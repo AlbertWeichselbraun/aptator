@@ -11,6 +11,12 @@ A lightweight Python utility to automatically check and install the latest relea
 - **Standard library only**: No external dependencies (Python 3.11+)
 - **Error handling**: Graceful error reporting for individual package failures
 
+## Requirements
+
+- Python 3.11 or later
+- Debian-based Linux distribution with `dpkg` and `sudo`
+- Network access to GitHub API
+
 ## Installation
 
 ```bash
