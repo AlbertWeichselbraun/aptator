@@ -16,7 +16,7 @@ class ConfigSection:
 
     def __init__(self, data):
         """Initialize with configuration data."""
-        for key, value in (data.items() if isinstance(data, dict) else []):
+        for key, value in data.items() if isinstance(data, dict) else []:
             setattr(self, key, value)
 
 
@@ -30,8 +30,9 @@ class AptatorConfigMeta(type):
         if cls._sections is None:
             with open(CONFIG_PATH, "rb") as f:
                 config_dict = tomllib.load(f)
-                cls._sections = {section_name: ConfigSection(section_data)
-                                 for section_name, section_data in config_dict.items() }
+                cls._sections = {
+                    section_name: ConfigSection(section_data) for section_name, section_data in config_dict.items()
+                }
 
         return cls._sections.get(name)
 
@@ -39,4 +40,3 @@ class AptatorConfigMeta(type):
 class AptatorConfig(metaclass=AptatorConfigMeta):
     """Global configuration manager for aptator."""
 
-    pass

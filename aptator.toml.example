@@ -4,6 +4,9 @@
 [paths]
 # Location of system binaries  
 sudo = "/usr/bin/sudo"
+mkdir = "/usr/bin/mkdir"
+ln= "/usr/bin/ln"
+chown = "/usr/bin/chown"
 
 
 [[packages]]

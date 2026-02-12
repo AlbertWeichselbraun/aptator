@@ -1,3 +1,4 @@
+import os
 import tarfile
 import tempfile
 from pathlib import Path
@@ -5,23 +6,29 @@ from urllib.request import urlopen
 
 from aptator import AptatorConfig
 from aptator.actions.tar_extraction_filter import rename
+from aptator.tools import run
 
-SUDO = AptatorConfig.settings.sudo
+SUDO = AptatorConfig.paths.sudo
 
-def download_extract_and_link(url, extract_to, link_to, archive_root_dir=None):
+
+def download_extract_and_link(url, extract_to, link_to):
     """Download an archive, extract it, and create a symlink.
 
     Args:
         url: The URL of the archive to download.
-        extract_to: Path to which the archive should be extracted (e.g., /opt).
-        archive_root_dir: Root directory name of the extracted archive (e.g. ./Zotero-8.0.2)
+        extract_to: Path to which the archive should be extracted (e.g., /opt/Zotero-8.0.2).
         link_to: Symlink path (e.g., /opt/zotero -> /opt/Zotero-8.0.2).
-        
+
     Raises:
         ValueError: If the content type is unsupported.
     """
+    uid = os.getuid()
+    gid = os.getgid()
     extract_to = Path(extract_to)
     link_to = Path(link_to)
+
+    run([SUDO, AptatorConfig.paths.mkdir, "-p", extract_to])
+    run([SUDO, AptatorConfig.paths.chown, "-R", f"{uid}:{gid}", extract_to])
 
     # Download the file to a temporary file
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -32,17 +39,14 @@ def download_extract_and_link(url, extract_to, link_to, archive_root_dir=None):
 
     if "tar" in content_type.lower():
         with tarfile.open(temp_file_path) as tar:
-            tar_filter = rename(archive_root_dir) if archive_root_dir else "data"
-            tar.extractall(path=extract_to, filter=tar_filter)
+            tar_filter = rename(str(extract_to.name))
+            tar.extractall(path=str(extract_to.parent), filter=tar_filter)
     else:
         raise ValueError(f"Unsupported content type: {content_type}")
 
     # Remove existing symlink if it exists
-    if link_to.exists():
-        link_to.unlink()
-
-    # Create symlink
-    link_to.symlink_to(extract_to, target_is_directory=True)
+    run([SUDO, AptatorConfig.paths.chown, "-R", "root:root", extract_to])
+    run([SUDO, AptatorConfig.paths.ln, "-sfn", extract_to, link_to])
 
     # Clean up temporary file
     temp_file_path.unlink()

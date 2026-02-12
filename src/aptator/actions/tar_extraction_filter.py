@@ -1,10 +1,9 @@
 """Custom tar extraction filters for archive manipulation."""
 
 import tarfile
-from typing import Optional
 
 
-def rename(root_dir: str, base_filter: Optional[str] = "data"):
+def rename(root_dir: str, base_filter: str | None = "data_filter"):
     """Create a tar data filter that renames the root directory during extraction.
 
     Args:
@@ -24,24 +23,17 @@ def rename(root_dir: str, base_filter: Optional[str] = "data"):
     if base_filter:
         base = getattr(tarfile, base_filter)
 
-    def rename_root_filter(tarinfo: tarfile.TarInfo, root_dir: str = root_dir) -> tarfile.TarInfo:
+    def rename_root_filter(tarinfo: tarfile.TarInfo, path: str) -> tarfile.TarInfo:
         """Filter that renames the root directory of the archive."""
         # Find the original root directory from the first component of the path
-        path_parts = tarinfo.name.split("/", 1)
-        original_root = path_parts[0]
-
-        # Replace the original root with the new root directory name
-        if len(path_parts) > 1:
-            # If there are subdirectories/files, reconstruct the path
-            tarinfo.name = f"{root_dir}/{path_parts[1]}"
+        if "/" in tarinfo.name:
+            tarinfo.name = "/".join((root_dir, tarinfo.name.split("/", 1)[1]))
         else:
-            # If it's just the root directory itself
             tarinfo.name = root_dir
 
         # Apply base filter if specified
         if base is not None:
-            tarinfo = base(tarinfo)
-
+            tarinfo = base(tarinfo, path)
         return tarinfo
 
     return rename_root_filter
