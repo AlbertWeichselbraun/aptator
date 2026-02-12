@@ -1,6 +1,10 @@
+from subprocess import CalledProcessError
+
+from aptator import AptatorConfig
 from aptator.tools import run
 
+SUDO = AptatorConfig.settings.sudo_binary
 
 def install_deb(path):
     """Install a .deb package using dpkg."""
-    run(["/usr/bin/sudo", "/usr/bin/dpkg", "-i", path])
+    run([SUDO, "/usr/bin/dpkg", "-i", path])

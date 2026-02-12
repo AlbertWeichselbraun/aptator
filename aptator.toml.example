@@ -1,6 +1,27 @@
 # aptator configuration file
 # Location: ~/.config/aptator/aptator.toml
 
+[paths]
+# Location of system binaries  
+sudo = "/usr/bin/sudo"
+
+
+[[packages]]
+name = "Zotero"
+repo = "zotero/zotero"
+asset_pattern = ".*\\.tar.gz"
+asset_version_pattern = "(.*).tar.gz"
+use_tag = true
+action = { type = "download-extract-and-link", url = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-x86_64", extract_to = "/opt", link_to = "/opt/zotero" }
+
+[[packages]]
+name = "Calibre"
+repo = "kovidgoyal/calibre"
+asset_pattern = ".*-x86_64.txz"
+asset_version_pattern = "calibre-(.*)-x86"
+prerelease = false
+action = { type = "exec", command="sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin" }
+
 [[packages]]
 name = "FreeTube"
 repo = "FreeTubeApp/FreeTube"
